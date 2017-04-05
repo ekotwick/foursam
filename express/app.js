@@ -14,19 +14,11 @@ module.exports = app;
 
 app.use(bodyParser.urlencoded({extended: false}));
 app.use(bodyParser.json());
-// real deal important to use this. otherwise we can't use 'req.body', and so can't put anything in the database.
-// also, defaul success status code is 200. this can be changed to be more expressive of what took place.
 
-// ## APP STATIC ## //
 
-// app.use('/files', express.static('public'));
-app.use('/files', express.static(__dirname + '/public/static'));
+// you were routing express.static correctly ... but you were routing to public/static when you had no static folder in public. I created this static folder and moved index.html into it. I believe the checkpoint should have come with this file structure? did you change this?
+app.use('/files', express.static(path.join(__dirname, 'public/static')));
 
-// app.use('/files', express.static(path.join(__dirname, 'public/static')));
-
-// app.use(express.static('public'));
-// app.use(express.static(path.join(__dirname, 'public')));
-// app.use(express.static(__dirname + 'public'));
 
 app.use(session({
 	secret: 'my express secret',
@@ -34,6 +26,35 @@ app.use(session({
 	// saveUninitialized: false
 	views: 0,
 }));
+
+// WHY ARE THESE SUBROUTES NOT IN A SEPARATE FILE ?
+// something like this app.use('/api', apiRouter); with apiRouter encompassing all of these routes
+// I (think) that if you have this all routed to a separate file like above, and include that route above your express.static, that your express.static will work. refactor this.
+
+
+// let's go over the use of app/router.param. You should be able to use this to do your Sequelize lookup of your book by bookID, then attach that book as req.book to your subsequent routes that use this param for some really DRY and short routes.
+// take a look at this:
+
+// router.param('id', (req, res, next, id) => {
+//   Book.findById(id)
+//   .then(book => {
+//     if (!book) {
+//       const err = new Error('Book not found');
+//       err.status = 404;
+//       throw err;
+//     }
+//     req.book = book;
+//     next();
+//     return null;
+//   })
+//   .catch(next);
+// });
+
+// router.get('/:id', (req, res, next) => {
+//   res.send(req.book);
+// });
+
+
 
 app.param('bookId', (req, res, next, bookId) => {
 	req.bookId = bookId;
@@ -47,6 +68,8 @@ app.param('chapId', (req, res, next, chapId) => {
 	else next();
 });
 
+// nice use of lodash, but overcomplicating things here. Try to use native methods before you start going to libraries.
+//   if (Object.keys(req.query).length > 0)
 app.get('/api/books', (req, res, next) => {
 	let query = req.query;
 	if (_.isEmpty(query)) {
@@ -78,7 +101,6 @@ app.post('/api/books', (req, res, next) => {
 });
 
 app.get('/api/books/:bookId', (req, res, next) => {
-	// if (req.id.match(/\D/g)) res.sendStatus(500);
 	Book.findById(req.bookId)
 		.then(foundBook => {
 			if (!foundBook) res.sendStatus(404);
@@ -87,12 +109,8 @@ app.get('/api/books/:bookId', (req, res, next) => {
 		.catch(next);
 });
 
-// notice that the first updated instance actually comes as an array, i.e., the return is an array whose second element is itself an array. can verfify in the tests
 
-//.update() returns an array: the number of affected rows and the effected rows
-// to update, pass two arguments: first, the content to add; second, a where condition specifying the rows to add
 app.put('/api/books/:bookId', (req, res, next) => {
-	// if (req.id.match(/\D/g)) res.sendStatus(500);
 	Book.update(req.body, {
 		where: {id: req.bookId},
 		returning: true
@@ -104,10 +122,8 @@ app.put('/api/books/:bookId', (req, res, next) => {
 		.catch(next);
 });
 
-// ALWAYS MIND THE DASH. THE DASH SHOULDN'T BE SILENT BUT IT DO
-// destroy returns the number of destroyed rows
+
 app.delete('/api/books/:bookId', (req, res, next) => {
-	// if (req.id.match(/\D/g)) res.sendStatus(500);
 	Book.destroy({ where: {id: req.bookId}	})
 		.then(numDestroyed => {
 			if (numDestroyed === 0) res.sendStatus(404);
@@ -116,7 +132,8 @@ app.delete('/api/books/:bookId', (req, res, next) => {
 		.catch(next);
 });
 
-// get all the chapters of a given book
+
+// look at how long these strings are. this can be shortened by using router.use('api', apiRouter) router.use('/books', bookRouter). You shouldn't be chaining huge routes like this.
 app.get('/api/books/:bookId/chapters', (req, res, next) => {
 	Chapter.findAll({
 		where: {
@@ -163,6 +180,23 @@ app.put('/api/books/:bookId/chapters/:chapId', (req, res, next) => {
 });
 
 // when deleting a chapter, we also have to remove the association from the book that has the chapter. then we can delete the chapter: to remove a created association, you can just call the set method without a specific id.
+
+// this route is also unnecessarily complex. take a look at this (doesn't handle if chapter doesn't exist)
+// app.delete('/api/books/:books/chapters/:chapId', (req, res, next) => {
+// 	Chapter.findOne({
+// 		where: {
+// 			id: req.chapId
+// 		}
+// 	})
+// 	.then(foundChapter => {
+//   	return foundChapter.destroy()
+// 	})
+//   .then(() => {
+//     res.sendStatus(204);
+//   })
+//   .catch(next);
+// });
+
 app.delete('/api/books/:books/chapters/:chapId', (req, res, next) => {
 	Chapter.findOne({
 		where: {
@@ -194,6 +228,7 @@ app.delete('/api/books/:books/chapters/:chapId', (req, res, next) => {
 
 });
 
+// let's take a look at sessions together
 app.get('/api/numVisits', (req, res, next) => {
 	console.log(req.session);
 	const views = req.session.views;
@@ -201,8 +236,6 @@ app.get('/api/numVisits', (req, res, next) => {
 	const strViews = views + '';
 	console.log(strViews);
 	res.send(strViews);
-	// res.sendStatus(500)
-	// console.log(req.session);
 });
 
 app.use('/forbidden', (req, res, next) => {
@@ -225,4 +258,4 @@ app.use((err, req, res, next) => {
 // 	req.session.views++;
 // 	res.sendStatus(500);
 // });
-// adding that object 
+// adding that object

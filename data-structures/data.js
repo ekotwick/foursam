@@ -1,12 +1,5 @@
 'use strict';
-/*
-Fill in your own code where you see "your code here".
-You can insert new lines at those locations, but you
-will not need to edit the lines above and below them.
-*/
 
-//-----------------------------------------
-// Stacks
 
 function Stack () {
   // your code here
@@ -15,38 +8,40 @@ function Stack () {
   this.last = 0
 }
 
+
 Stack.prototype.add = function (item) {
+  // this is NUTS, but some impressive chaining. there is a much much easier way to do this, try:
+  // this.stackArr[this.last++] = item;
   this.stackArr = this.stackArr.slice(0,this.first).concat([item]).concat(this.stackArr.slice(this.first));
   this.last++;
-  // your code here
 
-  return this; // for chaining, do not edit
+  return this;
 };
 
 Stack.prototype.remove = function () {
-  // your code here
   if (this.last === this.first) return undefined;
   let removedItem = this.stackArr[this.first];
-  
+
   this.first++;
-  
+
   return removedItem;
 };
 
-//-----------------------------------------
-// Queues
-
-// EXTRA CREDIT: remove the `pending` line in the spec to attempt.
 
 function Queue () {
-  // your code here
   this.queueArr = [];
   this.first = 0;
   this.last = 0;
 }
 
 Queue.prototype.add = function (item) {
-  // your code here
+  // making things a bit more complex than they need to be here, you will always be adding something at the position of this.last, doesn't matter if its empty or not
+
+  // what about this
+  // this.queueArr[this.last++] = item;
+  // return this;
+
+
   if (this.first === 0 && this.last === 0) {
     this.queueArr[this.first] = item;
     this.last++;
@@ -54,22 +49,23 @@ Queue.prototype.add = function (item) {
     this.queueArr[this.last] = item;
     this.last++;
   }
-  return this; // for chaining, do not edit
+  return this;
 };
 
 Queue.prototype.remove = function () {
-  // your code here
   if (this.first === this.last) return undefined;
+
+  // looks good, but can shorten this code by saying:
+  // return this.queueArr[this.first++]
   let removedItem = this.queueArr[this.first];
   this.first++;
   return removedItem;
 };
 
-//-----------------------------------------
-// Linked lists
 
-// EXTRA CREDIT: remove the `pending` line in the spec to attempt.
 
+// your LinkedList looks great
+// one small thing: rather than saying if(x === null), use if(!x). this is cleaner & shorter.
 function LinkedList () {
   this.head = this.tail = null;
 }
@@ -96,7 +92,7 @@ LinkedList.prototype.addToTail = function (item) {
     this.tail = newNode;
   }
 
-  return this; // for chaining, do not edit
+  return this;
 };
 
 LinkedList.prototype.removeFromTail = function () {
@@ -125,14 +121,12 @@ LinkedList.prototype.forEach = function (iterator) {
     toProcess = toProcess.next;
   }
   iterator(toProcess.item);
-  
+
 };
 
-//-----------------------------------------
-// Association lists
+
 
 function Alist () {
-  // your code here
   this.head = null;
 }
 
@@ -143,7 +137,6 @@ function AlistNode (key, value, next=null) {
 }
 
 Alist.prototype.set = function (key, value) {
-  // your code here
   let newNode = new AlistNode(key, value);
 
   if (!this.head) {
@@ -153,7 +146,7 @@ Alist.prototype.set = function (key, value) {
     this.head = newNode;
   }
 
-  return this; // for chaining; do not edit
+  return this;
 };
 
 Alist.prototype.get = function (key) {
@@ -169,8 +162,6 @@ Alist.prototype.get = function (key) {
 };
 
 
-//-----------------------------------------
-// Hash tables
 
 function hash (key) {
   var hashedKey = 0;
@@ -185,21 +176,18 @@ function HashTable () {
   for (var i = 0; i < this.buckets.length; i++){
     this.buckets[i] = new Alist();
   }
-  // your code here
 }
 
 HashTable.prototype.set = function (key, value) {
-  // your code here. DO NOT simply set a prop. on an obj., that is cheating.
-  let hashedKey = hash(key); 
+  let hashedKey = hash(key);
   let bucketAListNode = this.buckets[hashedKey]
 
   bucketAListNode.set(key, value);
 
-  return this; // for chaining, do not edit
+  return this;
 };
 
 HashTable.prototype.get = function (key) {
-  // your code here. DO NOT simply get a prop. from an obj., that is cheating.
   let hashedKey = hash(key);
   let toProcess = this.buckets[hashedKey].head;
 
@@ -214,17 +202,14 @@ HashTable.prototype.get = function (key) {
 
 };
 
-//-----------------------------------------
-// Binary search trees
+
 
 function BinarySearchTree (val) {
-  // your code here
   this.value = val;
   this.left = this.right = null;
 }
 
 BinarySearchTree.prototype.insert = function (val) {
-  // your code here  
   let toInsert = new BinarySearchTree(val);
   if (val > this.value) {
     if (this.right) {
@@ -240,42 +225,43 @@ BinarySearchTree.prototype.insert = function (val) {
     }
   }
 
-  return this; // for chaining, do not edit
+  return this;
 };
 
 BinarySearchTree.prototype.min = function () {
-  // your code here
   if (!this.left) return this.value;
   else return this.left.min();
 };
 
 BinarySearchTree.prototype.max = function () {
-  // your code here
   if (!this.right) return this.value;
   else return this.right.max();
 };
 
+// could probably shorten this a bit rather than returning false multiple times. what if you just checked if this.right or this.left existed (and then did the recursive call off that), and then at the very end of your function you return false once. so if you don't hit those true conditionals, you just hit this one catch-all return false at the end of your function.
 BinarySearchTree.prototype.contains = function (val) {
   // your code here
   if (this.value === val){
     return true;
   } else if (val > this.value) {
+    // if (this.right) this.right.contains(val);
     if (!this.right) {
       return false;
     } else {
-      return this.right.contains(val);
+      return
     }
   } else {
+    // if (this.left) this.left.contains(val);
     if (!this.left){
       return false;
     } else {
       return this.left.contains(val);
     }
   }
+  // return false;
 };
 
 BinarySearchTree.prototype.traverse = function (iterator) {
-  // your code here
   if (this.left) this.left.traverse(iterator);
   iterator(this.value);
   if (this.right) this.right.traverse(iterator);

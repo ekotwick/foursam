@@ -3,7 +3,8 @@
 var db = require('./database');
 var Sequelize = require('sequelize');
 
-// Make sure you have `postgres` running!
+
+// THIS LOOKS AWESOME! this is a really hard review checkpoint. I can tell you have been working on Sequelize a lot. I'm impressed
 
 var Task = db.define('Task', {
   name: {
@@ -19,7 +20,6 @@ var Task = db.define('Task', {
   },
   due: Sequelize.DATE
 }, {
-  //---------VVVV---------  your code below  ---------VVV----------
   getterMethods: {
 
     timeRemaining: function(){
@@ -27,6 +27,7 @@ var Task = db.define('Task', {
       else return this.due - Date.now();
     },
 
+    // unnecessary else. that return true would end the function if the if statement hit, so you can just say return false
     overdue: function(){
       if (!this.complete && Date.now() - this.due > 0) return true;
       else return false;
@@ -50,20 +51,12 @@ var Task = db.define('Task', {
       )
     }
 
-  }, 
+  },
 
   instanceMethods: {
-    // an instance method is called ON AN INSTANCE——there is a "this", and the this is a task.
 
     addChild: function(task){
-
-      // 'should return a promise for a new child'
-      // so we need to do two things:
-      // 1) create a new task
-      // 2) assign that task a parent
-      // remember the thing about promises: if you don't return them, it's as if they didn't happen!
-      // now, we set the parent as "this" because our instances methods are being called on something
-      // arrow functoins are important because we need to keep track of 'this'!!
+      //nice arrow function with 'this' context
       return Task.create(task)
         .then(createdTask => {
           return createdTask.setParent(this);
@@ -71,7 +64,6 @@ var Task = db.define('Task', {
     },
 
     getChildren: function() {
-      // we set up an association between the objects. this means that a foreign key will be placed in one of the tables for the other. 
       return Task.findAll({
         where: {
           parentId: this.id
@@ -80,15 +72,6 @@ var Task = db.define('Task', {
     },
 
     getSiblings: function() {
-  // the task here isn't to find children; it's to find other tasks that have the same parent
-  // find association: 
-      // or eagerly load all instances with the parent id given...
-      // return Task.findAll({})
-      //   .then(foundTasks => {console.log(foundTasks)})
-
-      // look at all the tasks. we're interested in finding all the tasks that have the same parentId——they all belong to the same parent.
-      // so we can do that search, but then we need to exclude one item from our search, namely this!
-      // how do do that? with another condition! use one of the operators.
       return Task.findAll({
         where: {
           parentId: this.parentId,
@@ -102,11 +85,6 @@ var Task = db.define('Task', {
   },
 
   hooks: {
-    // here's something interesting:
-    // "beforeCreate": causes all the instance methods to fail: there are no children tasks!
-    // "aftercreate": fails this spec: the tasks are already created: "expected [ Array(4) ] to have a length of 2 but got 4"
-    // "beforeDestroy": passes.
-    // does not work for beforeUpdate
     beforeDestroy: function(task){
       return Task.destroy({
         where: {
@@ -117,10 +95,6 @@ var Task = db.define('Task', {
   }
 
 
-
-
-
-  //---------^^^---------  your code above  ---------^^^----------
 });
 
 Task.belongsTo(Task, {as: 'parent'});
